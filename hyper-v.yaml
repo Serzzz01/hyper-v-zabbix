@@ -1,0 +1,54 @@
+zabbix_export:
+  version: '6.0'
+  date: '2025-05-23T02:14:56Z'
+  groups:
+    - uuid: 57b7ae836ca64446ba2c296389c009b7
+      name: Templates/Modules
+  templates:
+    - uuid: c49a75be62e044d897b90fdc80a3daaf
+      template: Hyper-V
+      name: Hyper-V
+      description: |
+        Нужно добавить в zabbix_agentd.conf 
+        ### Количество всех ВМ
+        UserParameter=hyperv.vm.count,powershell -NoProfile -Command "(Get-VM).Count"
+        
+        ### Количество работающих ВМ
+        UserParameter=hyperv.vm.running,powershell -NoProfile -Command "(Get-VM | Where-Object {$_.State -eq 'Running'}).Count"
+        
+        ### Использование CPU (в %)
+        UserParameter=hyperv.vm.cpu[*],powershell -NoProfile -Command "Get-VM -Name '$1' | Select-Object -ExpandProperty ProcessorLoad"
+        
+        ### Использование RAM (в MB)
+        UserParameter=hyperv.vm.ram[*],powershell -NoProfile -Command "(Get-VM -Name '$1').MemoryAssigned / 1MB"
+      groups:
+        - name: Templates/Modules
+      items:
+        - uuid: bf5aa1522cd44935a62637d3f1ceb331
+          name: 'Общее количество VM'
+          key: hyperv.vm.count
+          tags:
+            - tag: hyper-v
+        - uuid: 302a88f0038a4d949e88c406343a3081
+          name: 'Кол-во работающих VM'
+          key: hyperv.vm.running
+          tags:
+            - tag: hyper-v
+      discovery_rules:
+        - uuid: 78c87547ed1543c3b3001fe9e54a1808
+          name: 'VM name'
+          key: hyperv.vms.discovery
+          delay: 5m
+          item_prototypes:
+            - uuid: e868cf1891d3427bbb9419768d2ff00e
+              name: 'VM {#VM.NAME} CPU Load'
+              key: 'hyperv.vm.cpu[{#VM.NAME}]'
+              tags:
+                - tag: hyper-v
+            - uuid: 171506891f0345eda2368875cb858014
+              name: 'VM {#VM.NAME} RAM Usage'
+              key: 'hyperv.vm.ram[{#VM.NAME}]'
+              tags:
+                - tag: hyper-v
+      tags:
+        - tag: hyper-v
